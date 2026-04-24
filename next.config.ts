@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob: https://*.tiktokcdn.com https://*.cdninstagram.com https://*.fbcdn.net https://*.ytimg.com",
             "media-src 'self' blob: https://*.tiktokcdn.com https://*.cdninstagram.com https://*.fbcdn.net https://*.googlevideo.com",
-            "connect-src 'self' https://api.clerk.com https://*.supabase.co https://api.stripe.com",
+            "connect-src 'self' https://*.supabase.co https://api.stripe.com https://unpkg.com",
             "frame-src https://js.stripe.com https://hooks.stripe.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
             "font-src 'self'",
             "object-src 'none'",
