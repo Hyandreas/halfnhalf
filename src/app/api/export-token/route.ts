@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const supabase = createServiceRoleClient();
   const { data: dbUser, error: userErr } = await supabase
     .from("users")
-    .select("id, plan")
+    .select("id, plan, role")
     .eq("auth_id", user.id)
     .single();
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "User not found" }, { status: 404 });
   }
 
-  const allowed = await canExport(supabase, dbUser.id, dbUser.plan);
+  const allowed = await canExport(supabase, dbUser.id, dbUser.plan, dbUser.role);
   if (!allowed) {
     return Response.json(
       { error: "Weekly export limit reached" },
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
   return Response.json({
     token,
     issuedAt: issuedAt.toISOString(),
-    skipAd: dbUser.plan === "pro",
+    skipAd: dbUser.plan === "pro" || dbUser.role === "admin",
   });
 }

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   auth_id                UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   email                  TEXT NOT NULL,
   plan                   TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
+  role                   TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   stripe_customer_id     TEXT UNIQUE,
   stripe_subscription_id TEXT UNIQUE,
   subscription_status    TEXT,
@@ -74,3 +75,7 @@ CREATE TRIGGER on_auth_user_created
 
 -- Optional: clean up expired tokens (run periodically or via pg_cron)
 -- DELETE FROM export_tokens WHERE expires_at < now() AND used = false;
+
+-- ── Run these in Supabase SQL editor if upgrading an existing database ────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+UPDATE users SET role = 'admin' WHERE email = 'ahtsang@taftschool.org';

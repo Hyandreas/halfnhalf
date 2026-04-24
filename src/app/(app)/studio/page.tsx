@@ -21,12 +21,13 @@ export default async function Studio() {
     const db = createServiceRoleClient();
     const { data: dbUser } = await db
       .from("users")
-      .select("id, plan")
+      .select("id, plan, role")
       .eq("auth_id", user.id)
       .single();
 
     if (dbUser) {
-      plan = dbUser.plan === "pro" ? "pro" : "free";
+      const isAdmin = dbUser.role === "admin";
+      plan = dbUser.plan === "pro" || isAdmin ? "pro" : "free";
       if (plan === "free") {
         exportsUsed = await getWeeklyUsage(db, dbUser.id);
         exportAllowed = exportsUsed < FREE_EXPORTS_PER_WEEK;

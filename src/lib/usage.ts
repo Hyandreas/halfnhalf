@@ -30,9 +30,10 @@ export async function getWeeklyUsage(
 export async function canExport(
   supabase: SupabaseClient,
   userId: string,
-  plan: string
+  plan: string,
+  role = "user"
 ): Promise<boolean> {
-  if (plan === "pro") return true;
+  if (plan === "pro" || role === "admin") return true;
   const usage = await getWeeklyUsage(supabase, userId);
   return usage < FREE_EXPORTS_PER_WEEK;
 }

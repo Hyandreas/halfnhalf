@@ -3,6 +3,7 @@ export interface User {
   auth_id: string;
   email: string;
   plan: "free" | "pro";
+  role: "user" | "admin";
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   subscription_status: string | null;

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { createAuthClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createAuthClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -11,25 +15,42 @@ export default function Home() {
       <nav className="px-6 py-5 flex items-center justify-between max-w-5xl mx-auto w-full">
         <Image src="/halfnhalf.png" alt="halfnhalf" width={36} height={36} className="rounded-lg" />
         <div className="flex items-center gap-3">
-          <Link
-            href="/sign-in"
-            className="text-sm font-semibold transition-colors"
-            style={{ color: "#7a5c47" }}
-          >
-            sign in
-          </Link>
-          <Link
-            href="/sign-up"
-            className="px-4 py-2 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
-            style={{
-              borderColor: "#D4A574",
-              backgroundColor: "#FFB997",
-              color: "#4a3728",
-              boxShadow: "2px 2px 0px #D4A574",
-            }}
-          >
-            get started →
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/studio"
+              className="px-4 py-2 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
+              style={{
+                borderColor: "#D4A574",
+                backgroundColor: "#FFB997",
+                color: "#4a3728",
+                boxShadow: "2px 2px 0px #D4A574",
+              }}
+            >
+              go to studio →
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-semibold transition-colors"
+                style={{ color: "#7a5c47" }}
+              >
+                sign in
+              </Link>
+              <Link
+                href="/sign-up"
+                className="px-4 py-2 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
+                style={{
+                  borderColor: "#D4A574",
+                  backgroundColor: "#FFB997",
+                  color: "#4a3728",
+                  boxShadow: "2px 2px 0px #D4A574",
+                }}
+              >
+                get started →
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -57,7 +78,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-2">
             <Link
-              href="/sign-up"
+              href={isLoggedIn ? "/studio" : "/sign-up"}
               className="px-7 py-3.5 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
               style={{
                 borderColor: "#D4A574",
@@ -66,7 +87,7 @@ export default function Home() {
                 boxShadow: "4px 4px 0px #D4A574",
               }}
             >
-              try for free →
+              {isLoggedIn ? "go to studio →" : "try for free →"}
             </Link>
             <Link
               href="/billing"

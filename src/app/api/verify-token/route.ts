@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
   const { data: dbUser } = await supabase
     .from("users")
-    .select("id, plan")
+    .select("id, plan, role")
     .eq("id", payload.userId)
     .eq("auth_id", user.id)
     .single();
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
   const tokenRecord = claimedTokens[0];
 
-  if (dbUser.plan !== "pro") {
+  if (dbUser.plan !== "pro" && dbUser.role !== "admin") {
     const issuedAt = new Date(tokenRecord.issued_at).getTime();
     const elapsed = (Date.now() - issuedAt) / 1000;
     if (elapsed < AD_DURATION_SECONDS) {
