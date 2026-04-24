@@ -1,6 +1,6 @@
 export interface User {
   id: string;
-  clerk_id: string;
+  auth_id: string;
   email: string;
   plan: "free" | "pro";
   stripe_customer_id: string | null;

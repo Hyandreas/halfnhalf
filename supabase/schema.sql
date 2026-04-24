@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS users (
   id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  clerk_id               TEXT UNIQUE NOT NULL,
+  auth_id                UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   email                  TEXT NOT NULL,
   plan                   TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
   stripe_customer_id     TEXT UNIQUE,
@@ -55,6 +55,22 @@ DROP TRIGGER IF EXISTS users_updated_at ON users;
 CREATE TRIGGER users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Auto-create a public.users row when someone signs up via Supabase Auth
+CREATE OR REPLACE FUNCTION handle_new_auth_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (auth_id, email)
+  VALUES (NEW.id, NEW.email)
+  ON CONFLICT (auth_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_auth_user();
 
 -- Optional: clean up expired tokens (run periodically or via pg_cron)
 -- DELETE FROM export_tokens WHERE expires_at < now() AND used = false;

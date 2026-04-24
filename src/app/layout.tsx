@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Press_Start_2P, Nunito } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import Script from "next/script";
 import { GrainOverlay } from "@/components/layout/GrainOverlay";
 import "./globals.css";
@@ -28,24 +27,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${pressStart.variable} ${nunito.variable}`}
-      >
-        <body>
-          <GrainOverlay />
-          {children}
-          {process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID && (
-            <Script
-              async
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
-              crossOrigin="anonymous"
-              strategy="lazyOnload"
-            />
-          )}
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${pressStart.variable} ${nunito.variable}`}>
+      <body>
+        <GrainOverlay />
+        {children}
+        {process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID && (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
+            crossOrigin="anonymous"
+            strategy="lazyOnload"
+          />
+        )}
+      </body>
+    </html>
   );
 }

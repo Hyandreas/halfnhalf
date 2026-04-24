@@ -1,7 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { StudioPage } from "@/components/studio/StudioPage";
-import { createServiceRoleClient } from "@/lib/supabase/server";
+import { createAuthClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { getWeeklyUsage, canExport } from "@/lib/usage";
 import { FREE_EXPORTS_PER_WEEK } from "@/lib/constants";
 
@@ -10,25 +9,26 @@ export const metadata = {
 };
 
 export default async function Studio() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const supabase = await createAuthClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   let plan: "free" | "pro" = "free";
   let exportsUsed = 0;
   let exportAllowed = true;
 
   try {
-    const supabase = createServiceRoleClient();
-    const { data: user } = await supabase
+    const db = createServiceRoleClient();
+    const { data: dbUser } = await db
       .from("users")
       .select("id, plan")
-      .eq("clerk_id", userId)
+      .eq("auth_id", user.id)
       .single();
 
-    if (user) {
-      plan = user.plan === "pro" ? "pro" : "free";
+    if (dbUser) {
+      plan = dbUser.plan === "pro" ? "pro" : "free";
       if (plan === "free") {
-        exportsUsed = await getWeeklyUsage(supabase, user.id);
+        exportsUsed = await getWeeklyUsage(db, dbUser.id);
         exportAllowed = exportsUsed < FREE_EXPORTS_PER_WEEK;
       }
     }

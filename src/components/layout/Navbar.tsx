@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { UserButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 interface NavbarProps {
   plan?: "free" | "pro";
 }
 
 export function Navbar({ plan = "free" }: NavbarProps) {
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClientSupabaseClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <nav
       className="sticky top-0 z-50 border-b-2 border-tan/30"
@@ -36,13 +46,12 @@ export function Navbar({ plan = "free" }: NavbarProps) {
               PRO ✦
             </span>
           )}
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
-          />
+          <button
+            onClick={handleSignOut}
+            className="text-xs px-3 py-1.5 rounded-full border-2 border-tan/50 font-semibold text-brown-light hover:border-tan transition-colors"
+          >
+            sign out
+          </button>
         </div>
       </div>
     </nav>

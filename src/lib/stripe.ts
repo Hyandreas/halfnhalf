@@ -21,8 +21,7 @@ export const stripe = new Proxy({} as Stripe, {
 export async function getOrCreateStripeCustomer(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   userId: string,
-  email: string,
-  clerkId: string
+  email: string
 ): Promise<string> {
   const { data: user } = await supabase
     .from("users")
@@ -34,7 +33,7 @@ export async function getOrCreateStripeCustomer(
 
   const customer = await getStripe().customers.create({
     email,
-    metadata: { clerk_id: clerkId, supabase_user_id: userId },
+    metadata: { supabase_user_id: userId },
   });
 
   await supabase

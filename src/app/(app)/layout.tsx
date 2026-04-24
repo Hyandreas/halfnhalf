@@ -1,23 +1,23 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
-import { createServiceRoleClient } from "@/lib/supabase/server";
+import { createAuthClient, createServiceRoleClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const supabase = await createAuthClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   let plan: "free" | "pro" = "free";
   try {
-    const supabase = createServiceRoleClient();
-    const { data } = await supabase
+    const db = createServiceRoleClient();
+    const { data } = await db
       .from("users")
       .select("plan")
-      .eq("clerk_id", userId)
+      .eq("auth_id", user.id)
       .single();
     if (data?.plan === "pro") plan = "pro";
   } catch {

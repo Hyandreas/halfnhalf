@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-export async function createServerSupabaseClient() {
+export async function createAuthClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -18,7 +19,7 @@ export async function createServerSupabaseClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Server component — cookie setting is a no-op
+            // Server component — no-op
           }
         },
       },
@@ -26,9 +27,7 @@ export async function createServerSupabaseClient() {
   );
 }
 
-// Bare service-role client for API routes (no cookie handling needed)
 export function createServiceRoleClient() {
-  const { createClient } = require("@supabase/supabase-js");
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

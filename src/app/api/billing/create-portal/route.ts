@@ -1,26 +1,26 @@
-import { auth } from "@clerk/nextjs/server";
-import { createServiceRoleClient } from "@/lib/supabase/server";
+import { createAuthClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
 
 export async function POST() {
-  const { userId } = await auth();
-  if (!userId) {
+  const authClient = await createAuthClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createServiceRoleClient();
-  const { data: user } = await supabase
+  const { data: dbUser } = await supabase
     .from("users")
     .select("stripe_customer_id")
-    .eq("clerk_id", userId)
+    .eq("auth_id", user.id)
     .single();
 
-  if (!user?.stripe_customer_id) {
+  if (!dbUser?.stripe_customer_id) {
     return Response.json({ error: "No billing account found" }, { status: 404 });
   }
 
   const session = await stripe.billingPortal.sessions.create({
-    customer: user.stripe_customer_id,
+    customer: dbUser.stripe_customer_id,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
   });
 
