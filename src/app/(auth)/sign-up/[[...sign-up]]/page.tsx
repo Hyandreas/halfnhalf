@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export default function SignUpPage() {
@@ -10,36 +11,44 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
 
     const supabase = createClientSupabaseClient();
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const emailRedirectTo = new URL("/auth/callback", appUrl).toString();
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo },
+    });
 
     if (authError) {
       setError(authError.message);
       setLoading(false);
-    } else {
-      router.push("/studio");
-      router.refresh();
+      return;
     }
+
+    if (!data.session) {
+      setMessage("Check your email to confirm your account.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/studio");
+    router.refresh();
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
-      <div className="text-center">
-        <h1
-          className="text-sm leading-loose mb-2"
-          style={{ fontFamily: "var(--font-press-start)", color: "#4a3728" }}
-        >
-          half
-          <br />
-          nhalf
-        </h1>
+      <div className="text-center flex flex-col items-center gap-2">
+        <Image src="/halfnhalf.png" alt="halfnhalf" width={72} height={72} className="rounded-2xl" />
         <p className="text-brown-light text-sm">create your account ✦</p>
       </div>
 
@@ -71,6 +80,7 @@ export default function SignUpPage() {
         </div>
 
         {error && <p className="text-red-500 text-xs">{error}</p>}
+        {message && <p className="text-brown-light text-xs">{message}</p>}
 
         <button
           type="submit"

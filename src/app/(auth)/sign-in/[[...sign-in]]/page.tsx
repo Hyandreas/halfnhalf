@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export default function SignInPage() {
@@ -31,15 +32,8 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
-      <div className="text-center">
-        <h1
-          className="text-sm leading-loose mb-2"
-          style={{ fontFamily: "var(--font-press-start)", color: "#4a3728" }}
-        >
-          half
-          <br />
-          nhalf
-        </h1>
+      <div className="text-center flex flex-col items-center gap-2">
+        <Image src="/halfnhalf.png" alt="halfnhalf" width={72} height={72} className="rounded-2xl" />
         <p className="text-brown-light text-sm">welcome back ✦</p>
       </div>
 
