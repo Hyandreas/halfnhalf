@@ -1,26 +1,122 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #FFF8F0;
+  --color-peach: #FFB997;
+  --color-rose: #E8A598;
+  --color-sage: #A8C5A0;
+  --color-tan: #D4A574;
+  --color-brown: #4a3728;
+  --color-brown-light: #7a5c47;
+
+  --font-heading: var(--font-press-start);
+  --font-body: var(--font-nunito);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --shadow-warm: 4px 4px 0px #D4A574;
+  --shadow-warm-sm: 2px 2px 0px #D4A574;
+  --shadow-soft: 0 4px 20px rgba(212, 165, 116, 0.25);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: #FFF8F0;
+  color: #4a3728;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #FFF8F0;
+  color: #4a3728;
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-press-start), 'Press Start 2P', monospace;
+}
+
+/* Warm card shadow utility */
+.warm-shadow {
+  box-shadow: var(--shadow-warm), var(--shadow-soft);
+}
+
+.warm-shadow-sm {
+  box-shadow: var(--shadow-warm-sm);
+}
+
+/* Retro button press effect */
+.retro-press {
+  transition: transform 80ms, box-shadow 80ms;
+}
+
+.retro-press:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #D4A574 !important;
+}
+
+/* Dashed border upload zone */
+.upload-zone {
+  border: 3px dashed #FFB997;
+  transition: border-color 200ms, background-color 200ms;
+}
+
+.upload-zone:hover,
+.upload-zone.dragging {
+  border-color: #D4A574;
+  background-color: rgba(255, 185, 151, 0.08);
+}
+
+/* 9:16 preview container */
+.shorts-frame {
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+/* AdSense container */
+.adsense-container {
+  min-height: 250px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF8F0;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4A574;
+  border-radius: 3px;
+}
+
+/* Progress bar animation */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.progress-shimmer {
+  background: linear-gradient(90deg, #FFB997 0%, #E8A598 50%, #FFB997 100%);
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* Grain overlay base style */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
 }
