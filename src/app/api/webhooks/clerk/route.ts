@@ -29,6 +29,9 @@ export async function POST(req: Request) {
 
   if (event.type === "user.created") {
     const { id, email_addresses } = event.data;
+    if (!email_addresses?.length) {
+      return Response.json({ error: "No email address" }, { status: 400 });
+    }
     await supabase.from("users").insert({
       clerk_id: id,
       email: email_addresses[0].email_address,
@@ -38,6 +41,9 @@ export async function POST(req: Request) {
 
   if (event.type === "user.updated") {
     const { id, email_addresses } = event.data;
+    if (!email_addresses?.length) {
+      return Response.json({ error: "No email address" }, { status: 400 });
+    }
     await supabase
       .from("users")
       .update({ email: email_addresses[0].email_address })

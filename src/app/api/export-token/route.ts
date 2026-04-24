@@ -11,8 +11,12 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const clipTopName: string = body.clipTopName ?? "clip";
-  const clipBottomName: string = body.clipBottomName ?? "clip";
+  const clipTopName: string = String(body.clipTopName ?? "clip").trim().slice(0, 255);
+  const clipBottomName: string = String(body.clipBottomName ?? "clip").trim().slice(0, 255);
+
+  if (clipTopName.includes("\0") || clipBottomName.includes("\0")) {
+    return Response.json({ error: "Invalid clip name" }, { status: 400 });
+  }
 
   const supabase = createServiceRoleClient();
   const { data: user, error: userErr } = await supabase

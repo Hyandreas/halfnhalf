@@ -1,10 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { ClipResult } from "@/types/api";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+const VALID_PLATFORMS = ["tiktok", "instagram", "youtube"] as const;
+const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
 
 export async function GET(req: Request) {
   const { userId } = await auth();
@@ -24,12 +27,18 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const query = searchParams.get("query") ?? "";
-  const platform = (searchParams.get("platform") ?? "tiktok") as
-    | "tiktok"
-    | "instagram"
-    | "youtube";
+  const query = (searchParams.get("query") ?? "").slice(0, 100);
+  const platformParam = searchParams.get("platform") ?? "tiktok";
   const cursor = searchParams.get("cursor") ?? "0";
+
+  if (!VALID_PLATFORMS.includes(platformParam as (typeof VALID_PLATFORMS)[number])) {
+    return Response.json({ error: "Invalid platform" }, { status: 400 });
+  }
+  const platform = platformParam as (typeof VALID_PLATFORMS)[number];
+
+  if (!/^\d+$/.test(cursor)) {
+    return Response.json({ error: "Invalid cursor" }, { status: 400 });
+  }
 
   if (!query.trim()) {
     return Response.json({ clips: [], hasMore: false, nextCursor: null });
@@ -43,15 +52,10 @@ export async function GET(req: Request) {
         return Response.json(await searchInstagram(query));
       case "youtube":
         return Response.json(await searchYouTube(query, cursor));
-      default:
-        return Response.json({ error: "Unknown platform" }, { status: 400 });
     }
   } catch (e: unknown) {
     console.error("Creator search error:", e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Search failed" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Search failed" }, { status: 500 });
   }
 }
 
@@ -74,6 +78,7 @@ async function searchTikTok(
       `https://${HOST}/user/info?unique_id=${encodeURIComponent(username)}`,
       { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
     );
+    if (!profileRes.ok) throw new Error(`TikTok API error: ${profileRes.status}`);
     const profileData = await profileRes.json();
     uid = profileData?.data?.user?.id;
   } else {
@@ -82,6 +87,7 @@ async function searchTikTok(
       `https://${HOST}/user/search?keyword=${encodeURIComponent(query)}&count=5`,
       { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
     );
+    if (!searchRes.ok) throw new Error(`TikTok API error: ${searchRes.status}`);
     const searchData = await searchRes.json();
     uid = searchData?.data?.user_list?.[0]?.user_info?.uid;
   }
@@ -93,6 +99,7 @@ async function searchTikTok(
     `https://${HOST}/user/posts?user_id=${uid}&count=20&cursor=${cursor}`,
     { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
   );
+  if (!postsRes.ok) throw new Error(`TikTok API error: ${postsRes.status}`);
   const postsData = await postsRes.json();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,6 +138,7 @@ async function searchInstagram(
       `https://${HOST}/v1/post_info?url=${encodeURIComponent(query)}`,
       { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
     );
+    if (!res.ok) throw new Error(`Instagram API error: ${res.status}`);
     const data = await res.json();
     const videoUrl =
       data?.data?.video_versions?.[0]?.url ??
@@ -161,6 +169,7 @@ async function searchInstagram(
     `https://${HOST}/v1/user/by/username?username=${encodeURIComponent(username)}`,
     { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
   );
+  if (!userRes.ok) throw new Error(`Instagram API error: ${userRes.status}`);
   const userData = await userRes.json();
   const userId = userData?.data?.pk;
 
@@ -170,6 +179,7 @@ async function searchInstagram(
     `https://${HOST}/v1/user/reels?user_id=${userId}`,
     { headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": HOST } }
   );
+  if (!reelsRes.ok) throw new Error(`Instagram API error: ${reelsRes.status}`);
   const reelsData = await reelsRes.json();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,6 +208,7 @@ async function searchYouTube(
   const channelRes = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${YT_KEY}`
   );
+  if (!channelRes.ok) throw new Error(`YouTube API error: ${channelRes.status}`);
   const channelData = await channelRes.json();
   const channelId = channelData?.items?.[0]?.id?.channelId;
 
@@ -207,6 +218,7 @@ async function searchYouTube(
   const videosRes = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&channelId=${channelId}&videoDuration=short&maxResults=20&key=${YT_KEY}`
   );
+  if (!videosRes.ok) throw new Error(`YouTube API error: ${videosRes.status}`);
   const videosData = await videosRes.json();
 
   // Step 3: Resolve download URLs with yt-dlp for each video
@@ -217,15 +229,23 @@ async function searchYouTube(
       const videoId = item.id?.videoId;
       let videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-      try {
-        // yt-dlp must be installed on the server
-        const { stdout } = await execAsync(
-          `yt-dlp -f "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4]" --get-url "https://www.youtube.com/watch?v=${videoId}"`,
-          { timeout: 15000 }
-        );
-        videoUrl = stdout.trim().split("\n")[0];
-      } catch {
-        // yt-dlp failed — return YouTube URL as fallback
+      // Only attempt yt-dlp for valid 11-char YouTube video IDs
+      if (VIDEO_ID_RE.test(videoId)) {
+        try {
+          const { stdout } = await execFileAsync(
+            "yt-dlp",
+            [
+              "-f",
+              "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4]",
+              "--get-url",
+              `https://www.youtube.com/watch?v=${videoId}`,
+            ],
+            { timeout: 15000 }
+          );
+          videoUrl = stdout.trim().split("\n")[0];
+        } catch {
+          // yt-dlp failed — return YouTube URL as fallback
+        }
       }
 
       return {
@@ -246,3 +266,4 @@ async function searchYouTube(
     nextCursor: videosData?.nextPageToken ?? null,
   };
 }
+

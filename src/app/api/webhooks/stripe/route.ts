@@ -2,6 +2,8 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature")!;
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
       const supabaseUserId = session.metadata?.supabase_user_id;
       const subscriptionId = session.subscription as string;
 
-      if (supabaseUserId && subscriptionId) {
+      if (supabaseUserId && UUID_RE.test(supabaseUserId) && subscriptionId) {
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         await supabase
           .from("users")
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
       const supabaseUserId = sub.metadata?.supabase_user_id;
       const isActive = sub.status === "active" || sub.status === "trialing";
 
-      if (supabaseUserId) {
+      if (supabaseUserId && UUID_RE.test(supabaseUserId)) {
         await supabase
           .from("users")
           .update({
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
       const sub = event.data.object as Stripe.Subscription;
       const supabaseUserId = sub.metadata?.supabase_user_id;
 
-      if (supabaseUserId) {
+      if (supabaseUserId && UUID_RE.test(supabaseUserId)) {
         await supabase
           .from("users")
           .update({

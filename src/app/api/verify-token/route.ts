@@ -11,14 +11,16 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { token, clipTopName = "clip", clipBottomName = "clip" } = body as {
-    token: string;
-    clipTopName?: string;
-    clipBottomName?: string;
-  };
+  const { token } = body as { token: string };
+  const clipTopName = String(body.clipTopName ?? "clip").trim().slice(0, 255);
+  const clipBottomName = String(body.clipBottomName ?? "clip").trim().slice(0, 255);
 
   if (!token) {
     return Response.json({ error: "Missing token" }, { status: 400 });
+  }
+
+  if (clipTopName.includes("\0") || clipBottomName.includes("\0")) {
+    return Response.json({ error: "Invalid clip name" }, { status: 400 });
   }
 
   // Verify JWT signature and expiry
@@ -54,39 +56,41 @@ export async function POST(req: Request) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Look up the token record
+  // Atomically claim the token: only succeeds if it exists, is unused, and not expired.
+  // Using update with a WHERE clause means exactly one request wins the race.
   const tokenHash = hashToken(token);
-  const { data: tokenRecord } = await supabase
+  const now = new Date().toISOString();
+  const { data: claimedTokens, error: claimError } = await supabase
     .from("export_tokens")
-    .select("id, issued_at, used")
+    .update({ used: true, used_at: now })
     .eq("token_hash", tokenHash)
-    .single();
+    .eq("used", false)
+    .gt("expires_at", now)
+    .select("id, issued_at");
 
-  if (!tokenRecord) {
-    return Response.json({ error: "Token not found" }, { status: 401 });
+  if (claimError || !claimedTokens || claimedTokens.length === 0) {
+    // Could be not found, already used, or expired — don't distinguish to avoid oracle attacks
+    return Response.json({ error: "Token invalid, already used, or expired" }, { status: 409 });
   }
 
-  if (tokenRecord.used) {
-    return Response.json({ error: "Token already used" }, { status: 409 });
-  }
+  const tokenRecord = claimedTokens[0];
 
   // Server-side 20-second enforcement (skipped for pro users)
   if (user.plan !== "pro") {
     const issuedAt = new Date(tokenRecord.issued_at).getTime();
     const elapsed = (Date.now() - issuedAt) / 1000;
     if (elapsed < AD_DURATION_SECONDS) {
+      // Roll back the claim so the token can be retried after the wait
+      await supabase
+        .from("export_tokens")
+        .update({ used: false, used_at: null })
+        .eq("id", tokenRecord.id);
       return Response.json(
         { error: `Please wait ${Math.ceil(AD_DURATION_SECONDS - elapsed)} more seconds` },
         { status: 425 }
       );
     }
   }
-
-  // Mark token as used
-  await supabase
-    .from("export_tokens")
-    .update({ used: true, used_at: new Date().toISOString() })
-    .eq("id", tokenRecord.id);
 
   // Record the export
   await incrementUsage(supabase, user.id, clipTopName, clipBottomName);
