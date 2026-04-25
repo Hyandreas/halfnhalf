@@ -12,21 +12,23 @@ export default async function AppLayout({
   if (!user) redirect("/sign-in");
 
   let plan: "free" | "pro" = "free";
+  let role: "user" | "admin" = "user";
   try {
     const db = createServiceRoleClient();
     const { data } = await db
       .from("users")
-      .select("plan")
+      .select("plan, role")
       .eq("auth_id", user.id)
       .single();
     if (data?.plan === "pro") plan = "pro";
+    if (data?.role === "admin") role = "admin";
   } catch {
-    // DB not configured yet — default to free
+    // DB not configured yet — default to free/user
   }
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar plan={plan} />
+      <Navbar plan={plan} role={role} />
       <main className="flex-1">{children}</main>
     </div>
   );
