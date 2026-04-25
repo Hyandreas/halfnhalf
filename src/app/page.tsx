@@ -1,11 +1,23 @@
 import Link from "next/link";
 import Image from "next/image";
-import { createAuthClient } from "@/lib/supabase/server";
+import { createAuthClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { HomeAccountMenu } from "@/components/layout/HomeAccountMenu";
 
 export default async function Home() {
   const supabase = await createAuthClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
+
+  let role: "user" | "admin" = "user";
+  if (user) {
+    try {
+      const db = createServiceRoleClient();
+      const { data } = await db.from("users").select("role").eq("auth_id", user.id).single();
+      if (data?.role === "admin") role = "admin";
+    } catch {
+      // DB not available — default to user
+    }
+  }
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -16,18 +28,21 @@ export default async function Home() {
         <Image src="/halfnhalf.png" alt="halfnhalf" width={36} height={36} className="rounded-lg" />
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
-            <Link
-              href="/studio"
-              className="px-4 py-2 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
-              style={{
-                borderColor: "#D4A574",
-                backgroundColor: "#FFB997",
-                color: "#4a3728",
-                boxShadow: "2px 2px 0px #D4A574",
-              }}
-            >
-              go to studio →
-            </Link>
+            <>
+              <HomeAccountMenu role={role} />
+              <Link
+                href="/studio"
+                className="px-4 py-2 rounded-xl border-2 font-bold text-sm retro-press transition-colors"
+                style={{
+                  borderColor: "#D4A574",
+                  backgroundColor: "#FFB997",
+                  color: "#4a3728",
+                  boxShadow: "2px 2px 0px #D4A574",
+                }}
+              >
+                go to studio →
+              </Link>
+            </>
           ) : (
             <>
               <Link
