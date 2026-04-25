@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { ClipSlot } from "./ClipSlot";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { ExportButton } from "./ExportButton";
@@ -10,6 +10,7 @@ import { CreatorSearchModal } from "./CreatorSearchModal";
 import { Card } from "@/components/ui/Card";
 import { useExportFlow } from "@/hooks/useExportFlow";
 import { useFFmpeg } from "@/hooks/useFFmpeg";
+import { useGlitchEffect } from "@/hooks/useGlitchEffect";
 import { ClipResult } from "@/types/api";
 
 interface StudioPageProps {
@@ -26,6 +27,9 @@ export function StudioPage({ plan, exportsUsed, canExport }: StudioPageProps) {
   const [bottomFile, setBottomFile] = useState<File | null>(null);
   const [bottomUrl, setBottomUrl] = useState<string | null>(null);
   const [creatorSlot, setCreatorSlot] = useState<CreatorSlot>(null);
+
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useGlitchEffect(headingRef);
 
   const exportFlow = useExportFlow();
   const ffmpeg = useFFmpeg();
@@ -100,6 +104,7 @@ export function StudioPage({ plan, exportsUsed, canExport }: StudioPageProps) {
       {/* Page title */}
       <div className="mb-8 text-center">
         <h1
+          ref={headingRef}
           className="text-xs leading-loose"
           style={{ fontFamily: "var(--font-press-start)", color: "#4a3728" }}
         >

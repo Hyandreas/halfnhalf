@@ -111,6 +111,47 @@ h1, h2, h3 {
   animation: shimmer 1.5s linear infinite;
 }
 
+/* Floating sparkles */
+@keyframes sparkle-float {
+  0%   { opacity: 0; transform: translateY(0px) scale(0.4) rotate(0deg); }
+  12%  { opacity: 0.9; transform: translateY(-25px) scale(1.1) rotate(30deg); }
+  88%  { opacity: 0.5; transform: translateY(-160px) scale(0.85) rotate(-20deg); }
+  100% { opacity: 0; transform: translateY(-190px) scale(0.5) rotate(0deg); }
+}
+
+/* Ambient orb drifts */
+@keyframes orb-drift-1 {
+  0%, 100% { transform: translate(0px, 0px); }
+  30%      { transform: translate(90px, -70px); }
+  65%      { transform: translate(-50px, 55px); }
+}
+
+@keyframes orb-drift-2 {
+  0%, 100% { transform: translate(0px, 0px); }
+  25%      { transform: translate(-110px, 80px); }
+  60%      { transform: translate(70px, -45px); }
+  80%      { transform: translate(-25px, 65px); }
+}
+
+@keyframes orb-drift-3 {
+  0%, 100% { transform: translate(0px, 0px); }
+  40%      { transform: translate(120px, 55px); }
+  75%      { transform: translate(15px, -85px); }
+}
+
+/* Retro glitch jitter */
+@keyframes glitch-jitter {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 0); }
+  50%  { transform: translate(2px, 1px); }
+  75%  { transform: translate(-1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+.glitch-active {
+  animation: glitch-jitter 0.14s steps(4) forwards;
+}
+
 /* Grain overlay base style */
 .grain-overlay {
   position: fixed;

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Press_Start_2P, Nunito } from "next/font/google";
 import Script from "next/script";
 import { GrainOverlay } from "@/components/layout/GrainOverlay";
+import { AmbientOrbs } from "@/components/layout/AmbientOrbs";
+import { FloatingSparkles } from "@/components/layout/FloatingSparkles";
 import "./globals.css";
 
 const pressStart = Press_Start_2P({
@@ -29,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${pressStart.variable} ${nunito.variable}`}>
       <body>
+        <AmbientOrbs />
         <GrainOverlay />
+        <FloatingSparkles />
         {children}
         {process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID && (
           <Script

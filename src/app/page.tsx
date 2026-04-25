@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createAuthClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { HomeAccountMenu } from "@/components/layout/HomeAccountMenu";
+import { GlitchHeading } from "@/components/layout/GlitchHeading";
 
 export default async function Home() {
   const supabase = await createAuthClient();
@@ -75,14 +76,14 @@ export default async function Home() {
           <div className="flex justify-center mb-2">
             <Image src="/halfnhalf.png" alt="halfnhalf" width={72} height={72} className="rounded-2xl" />
           </div>
-          <h1
+          <GlitchHeading
             className="text-[11px] leading-[2.5] tracking-wide"
             style={{ fontFamily: "var(--font-press-start)", color: "#4a3728" }}
           >
             stack two clips.
             <br />
             make a short.
-          </h1>
+          </GlitchHeading>
           <p className="text-base leading-relaxed max-w-sm mx-auto" style={{ color: "#7a5c47" }}>
             drop your top and bottom clips, preview the split-screen, and export
             a{" "}
