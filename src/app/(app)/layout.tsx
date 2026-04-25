@@ -17,12 +17,15 @@ export default async function AppLayout({
     const db = createServiceRoleClient();
     const { data } = await db
       .from("users")
-      .select("plan, role")
+      .select("plan, role, onboarding_completed")
       .eq("auth_id", user.id)
       .single();
     if (data?.plan === "pro") plan = "pro";
     if (data?.role === "admin") role = "admin";
-  } catch {
+    if (data && !data.onboarding_completed) redirect("/onboarding");
+  } catch (e) {
+    // Re-throw Next.js redirect/notFound signals
+    if (typeof e === "object" && e !== null && "digest" in e) throw e;
     // DB not configured yet — default to free/user
   }
 

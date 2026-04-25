@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
   stripe_customer_id     TEXT UNIQUE,
   stripe_subscription_id TEXT UNIQUE,
   subscription_status    TEXT,
+  name                   TEXT,
+  birth_date             DATE,
+  country                TEXT,
+  referral_source        TEXT,
+  onboarding_completed   BOOLEAN NOT NULL DEFAULT FALSE,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -79,3 +84,9 @@ CREATE TRIGGER on_auth_user_created
 -- ── Run these in Supabase SQL editor if upgrading an existing database ────────
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin'));
 UPDATE users SET role = 'admin' WHERE email = 'ahtsang@taftschool.org';
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_source TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
